@@ -9,20 +9,28 @@ const app = express();
 
 //initialize stream client
 const chatClient = StreamChat.getInstance(
-    process.env.STREAM_API_KEY!,
-    process.env.STREAM_API_SECRET!
-)
+  process.env.STREAM_API_KEY!,
+  process.env.STREAM_API_SECRET!
+);
 
 //app route
-app.post("/", async (req: Request, res: Response): Promise<any> => {
+app.post("/register-user", async (req: Request, res: Response): Promise<any> => {
   const { name, email } = req.query;
+
+  console.log("name and email", name, email);
 
   if (!name || !email) {
     return res.status(400).json({ message: "Name and email are required" });
   }
-  return res
-    .status(200)
-    .json({ message: `Hello ${name}, your email is ${email}` });
+  try {
+    const userId = (email as string).replace(/[^a-zA-Z0-9]/g, "_");
+    //check if user already exists
+    const userResponse = await chatClient.queryUsers({ id: { $eq: userId } });
+    res.status(200).json({ message: "success" });
+  } catch (error) {
+    console.error("Error creating user:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
 });
 
 app.use(cors());
